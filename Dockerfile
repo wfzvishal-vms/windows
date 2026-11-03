@@ -1,9 +1,9 @@
+
 # syntax=docker/dockerfile:1.19
 
 ARG VERSION_ARG="latest"
-FROM scratch AS build-amd64
 
-COPY --from=qemux/qemu:7.50 --exclude=usr/bin/qemu-system-x86_64 / /
+FROM qemux/qemu:7.50 AS build-amd64
 
 ARG TARGETARCH
 
@@ -32,14 +32,11 @@ RUN <<EOF
     libxml2-utils \
     libarchive-tools
 
-  # Install Blinter
   python3 -m pip install --break-system-packages --root-user-action=ignore --no-cache-dir "Blinter==${VERSION_BLINTER}"
 
-  # Install wsddn package
   wget "https://github.com/gershnik/wsdd-native/releases/download/v${VERSION_WSDD}/wsddn_${VERSION_WSDD}_${TARGETARCH}.deb" -O /tmp/wsddn.deb -q --timeout=10
   dpkg -i /tmp/wsddn.deb
 
-  # Install dxvk-native
   wget "https://github.com/doitsujin/dxvk/releases/download/v${VERSION_DXVK}/dxvk-native-${VERSION_DXVK}-steamrt-sniper.tar.gz" -O /tmp/dxvk-native.tar.gz -q --timeout=10
   tar -xzf /tmp/dxvk-native.tar.gz -C /
   ldconfig
@@ -56,9 +53,11 @@ COPY --from=qemux/qemu-windows:11.2.23 /usr/bin/qemu-system-x86_64 /usr/bin/
 ADD --chmod=664 https://github.com/qemus/virtiso-whql/releases/download/v${VERSION_VIRTIO}-0/virtio-win-${VERSION_VIRTIO}.tar.xz /var/drivers.txz
 
 FROM dockurr/windows-arm:${VERSION_ARG} AS build-arm64
+
 FROM build-${TARGETARCH}
 
 ARG VERSION_ARG="0.00"
+
 RUN echo "$VERSION_ARG" > /etc/version
 
 VOLUME /storage
